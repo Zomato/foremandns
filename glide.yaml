@@ -1,0 +1,21 @@
+package: .
+ignore:
+- foremandns/cmd
+import:
+- package: github.com/spf13/cobra
+  version: v0.0.3
+  subpackages:
+  - cobra
+- package: github.com/spf13/viper
+  version: v1.0.2
+- package: github.com/vinothzomato/go-foreman
+- package: github.com/miekg/dns
+  version: v1.0.7
+- package: github.com/sirupsen/logrus
+  version: v1.0.5
+- package: golang.org/x/crypto
+  subpackages:
+  - ssh/terminal
+- package: github.com/google/go-querystring
+- package: github.com/go-redis/redis
+  version: v6.11.0

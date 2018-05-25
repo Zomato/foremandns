@@ -1,2 +1,2 @@
-# zomato-ad-dns
-Zomato AD DNS Server with Foreman API
+# foremandns
+Simple DNS server for resolving [Foreman](https://theforeman.org/) hosts
