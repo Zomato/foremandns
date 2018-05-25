@@ -23,8 +23,9 @@ all: fmt lint vendor | $(BASE) ; $(info $(M) building executable…) @ ## Build 
 		-o bin/$(PACKAGE) main.go
 
 .PHONY: package
-package: clean all ; $(info $(M) building executable…) @ ## Make program package
-	@tar -zcvf bin/${PACKAGE}-linux-amd64-${VERSION}.tgz bin/${PACKAGE}
+package: clean all ; $(info $(M) making tar) @ ## Make program package
+	@cd $(BASE)/bin && tar -zcvf ${PACKAGE}-linux-amd64-${VERSION}.tgz ${PACKAGE}
+	@cd $(BASE)
 
 $(BASE): ; $(info $(M) setting GOPATH…)
 	@mkdir -p $(dir $@)
