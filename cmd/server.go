@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/go-redis/redis"
 	"github.com/miekg/dns"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -22,6 +23,9 @@ var cfgFile string
 
 // Foreman client
 var client *foreman.Client
+
+// Foreman client
+var redisClient *redis.Client
 
 var (
 	ip        string
@@ -69,6 +73,18 @@ var ServerCmd = &cobra.Command{
 		client = foreman.NewClient(httpClient)
 		url, _ := url.Parse(baseurl)
 		client.BaseURL = url
+
+		switch cacheType {
+		case "redis":
+			redisServer := viper.GetString("redis.server")
+			redisPassword := viper.GetString("redis.password")
+			fmt.Printf("Redis server %v password %v\n", redisServer, redisPassword)
+			redisClient = redis.NewClient(&redis.Options{
+				Addr:     redisServer,
+				Password: redisPassword,
+				DB:       0,
+			})
+		}
 
 		srv := &dns.Server{Addr: ip + ":" + strconv.Itoa(port), Net: "udp"}
 		srv.Handler = &handler{}

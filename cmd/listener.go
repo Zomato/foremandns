@@ -3,18 +3,15 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"foremandns/util"
+	"github.com/karlseguin/ccache"
 	"github.com/miekg/dns"
 	log "github.com/sirupsen/logrus"
 	"net"
 	"strings"
+	"time"
 )
 
-var domainsToAddresses *util.TTLMap
-
-func init() {
-	domainsToAddresses = util.New(ttl)
-}
+var localCache = ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100))
 
 type handler struct{}
 
@@ -31,8 +28,21 @@ func (dnsHandler *handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 		log.Debug("Domain is ", domain)
 
-		address := domainsToAddresses.Get(domain)
+		var address string
+		if cacheType == "redis" {
+			addressVal, err := redisClient.Get(domain).Result()
+			if err != nil {
+				log.Error(fmt.Printf("Redis Error %v \n", err))
+			}
+			address = addressVal
+		} else {
+			addressVal := localCache.Get(domain)
+			if addressVal != nil {
+				address = addressVal.Value().(string)
+			}
+		}
 		if address != "" {
+			log.Info("Cached domain ", domain, " and the IP is ", address)
 			msg.Answer = append(msg.Answer, &dns.A{
 				Hdr: dns.RR_Header{Name: domainOriginal, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 60},
 				A:   net.ParseIP(address),
@@ -47,7 +57,11 @@ func (dnsHandler *handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 					Hdr: dns.RR_Header{Name: domainOriginal, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 60},
 					A:   net.ParseIP(*host.IP),
 				})
-				domainsToAddresses.Put(domain, *host.IP)
+				if cacheType == "redis" {
+					redisClient.Set(domain, *host.IP, time.Duration(ttl)*time.Second)
+				} else {
+					localCache.Set(domain, *host.IP, time.Duration(ttl)*time.Second)
+				}
 			}
 		}
 	}
