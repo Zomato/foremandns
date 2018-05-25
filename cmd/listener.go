@@ -42,7 +42,7 @@ func (dnsHandler *handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 			}
 		}
 		if address != "" {
-			log.Info("Cached domain ", domain, " and the IP is ", address)
+			log.Debug("Cached domain ", domain, " and the IP is ", address)
 			msg.Answer = append(msg.Answer, &dns.A{
 				Hdr: dns.RR_Header{Name: domainOriginal, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 60},
 				A:   net.ParseIP(address),

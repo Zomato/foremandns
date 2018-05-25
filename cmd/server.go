@@ -36,6 +36,7 @@ var (
 	zone      string
 	cacheType string
 	ttl       int
+	logFile   string
 )
 
 // ServerCmd for server sub command to start the server
@@ -57,7 +58,7 @@ var ServerCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Println("Starting the server")
+		log.Info(fmt.Sprintf("Starting the server on ip %s port %d \n", ip, port))
 
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -95,7 +96,6 @@ var ServerCmd = &cobra.Command{
 }
 
 func init() {
-	log.SetOutput(os.Stdout)
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: true,
 	})
@@ -107,6 +107,7 @@ func init() {
 	ServerCmd.Flags().StringVarP(&ip, "ip", "i", "0.0.0.0", "Server listen ip address default is 0.0.0.0")
 	ServerCmd.Flags().IntVarP(&port, "port", "t", 53, "Server listen port default is 53")
 	ServerCmd.Flags().StringVarP(&LogLevel, "log-level", "l", "info", "Log level e.g. debug, info, warning & error")
+	ServerCmd.Flags().StringVarP(&logFile, "log", "", "", "Log file path")
 	ServerCmd.Flags().StringVarP(&baseurl, "url", "f", "", "Foreman base url e.g. https://foreman.example.com/")
 	ServerCmd.Flags().StringVarP(&username, "username", "u", "", "Foreman username")
 	ServerCmd.Flags().StringVarP(&password, "password", "p", "", "Foreman password")
@@ -122,6 +123,7 @@ func init() {
 	viper.BindPFlag("zone", ServerCmd.Flags().Lookup("zone"))
 	viper.BindPFlag("cache-type", ServerCmd.Flags().Lookup("cache-type"))
 	viper.BindPFlag("log-level", ServerCmd.Flags().Lookup("log-level"))
+	viper.BindPFlag("log", ServerCmd.Flags().Lookup("log"))
 	viper.BindPFlag("ttl", ServerCmd.Flags().Lookup("ttl"))
 
 	log.SetLevel(log.InfoLevel)
@@ -165,7 +167,39 @@ func initConfig() {
 	if LogLevel == "" {
 		LogLevel = viper.GetString("log-level")
 	}
+	if logFile == "" {
+		logFile = viper.GetString("log")
+	}
+
 	if ttl == 1800 {
 		ttl = viper.GetInt("ttl")
+	}
+
+	switch LogLevel {
+	case "info":
+		log.SetLevel(log.InfoLevel)
+	case "debug":
+		log.SetLevel(log.DebugLevel)
+	case "warn":
+		log.SetLevel(log.WarnLevel)
+	case "erro":
+		log.SetLevel(log.ErrorLevel)
+	case "fatal":
+		log.SetLevel(log.FatalLevel)
+	case "panic":
+		log.SetLevel(log.PanicLevel)
+	default:
+		log.SetLevel(log.InfoLevel)
+	}
+
+	if logFile != "" {
+		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY, 0666)
+		if err == nil {
+			log.SetOutput(file)
+		} else {
+			log.Error("Failed to log to file, using default stderr")
+		}
+	} else {
+		log.SetOutput(os.Stdout)
 	}
 }
