@@ -17,6 +17,7 @@ import:
   subpackages:
   - ssh/terminal
 - package: github.com/google/go-querystring
+- package: github.com/bradfitz/gomemcache/memcache
 - package: github.com/go-redis/redis
   version: v6.11.0
 - package: github.com/karlseguin/ccache

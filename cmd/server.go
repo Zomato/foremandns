@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/go-redis/redis"
 	"github.com/miekg/dns"
 	log "github.com/sirupsen/logrus"
@@ -26,6 +27,9 @@ var client *foreman.Client
 
 // Foreman client
 var redisClient *redis.Client
+
+// Memcache client
+var memcacheClient *memcache.Client
 
 var (
 	ip        string
@@ -85,6 +89,12 @@ var ServerCmd = &cobra.Command{
 				Password: redisPassword,
 				DB:       0,
 			})
+
+		case "memcache":
+			memcacheServer := viper.GetString("memcache.server")
+			fmt.Printf("Memcache Server %s\n", memcacheServer)
+			memcacheClient = memcache.New(memcacheServer)
+
 		}
 
 		srv := &dns.Server{Addr: ip + ":" + strconv.Itoa(port), Net: "udp"}
@@ -112,7 +122,7 @@ func init() {
 	ServerCmd.Flags().StringVarP(&username, "username", "u", "", "Foreman username")
 	ServerCmd.Flags().StringVarP(&password, "password", "p", "", "Foreman password")
 	ServerCmd.Flags().StringVarP(&zone, "zone", "z", "", "Custom DNS zone for the hosts")
-	ServerCmd.Flags().StringVarP(&cacheType, "cache-type", "", "", "Cache type e.g. redis, memory")
+	ServerCmd.Flags().StringVarP(&cacheType, "cache-type", "", "", "Cache type e.g. redis, memory, memcached")
 	ServerCmd.Flags().IntVarP(&ttl, "ttl", "", 1800, "Cache expiry time default 1800 seconds(30min)")
 
 	viper.BindPFlag("ip", ServerCmd.Flags().Lookup("ip"))

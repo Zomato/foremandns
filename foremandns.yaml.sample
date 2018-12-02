@@ -12,3 +12,5 @@ log: '/var/log/foremandns.log'
 redis:
      - server: 'localhost:6379'
      - password: ''
+memcache:
+     - server: '127.0.0.1:11211'
