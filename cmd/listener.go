@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/karlseguin/ccache"
 	"github.com/miekg/dns"
 	log "github.com/sirupsen/logrus"
@@ -35,6 +36,16 @@ func (dnsHandler *handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 				log.Error(fmt.Printf("Redis Error %v \n", err))
 			}
 			address = addressVal
+		} else if cacheType == "memcache" {
+
+			memcacheval, err := memcacheClient.Get(domain)
+			if err != nil {
+
+				log.Error(fmt.Printf("Memcached Error %v\n", err))
+			}
+
+			address = string(memcacheval.Value[:])
+
 		} else {
 			addressVal := localCache.Get(domain)
 			if addressVal != nil {
@@ -59,6 +70,10 @@ func (dnsHandler *handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 				})
 				if cacheType == "redis" {
 					redisClient.Set(domain, *host.IP, time.Duration(ttl)*time.Second)
+				} else if cacheType == "memcache" {
+
+					memcacheClient.Set(&memcache.Item{Key: domain, Value: []byte(*host.IP)})
+
 				} else {
 					localCache.Set(domain, *host.IP, time.Duration(ttl)*time.Second)
 				}
